@@ -14,11 +14,11 @@ def main(filename="Emotion/1.jpg", para=1, para_min=2.5, offset=0, save_name="te
 
     for row in range(img.shape[0]):
         for col in range(img.shape[1]):
-            if row < img.shape[0] // 2:  # 列
-                r = math.sqrt((row - lenscenter[1]) ** 2 + (col - lenscenter[0]) ** 2) * para - (
-                        img.shape[0] // 2 - row) * para_min
-            else:
-                r = math.sqrt((row - lenscenter[1]) ** 2 + (col - lenscenter[0]) ** 2) * para
+            # if row < img.shape[0] // 2:  # 列
+            #     r = math.sqrt((row - lenscenter[1]) ** 2 + (col - lenscenter[0]) ** 2) * para - (
+            #             img.shape[0] // 2 - row) * para_min
+            # else:
+            r = math.sqrt((row - lenscenter[1]) ** 2 + (col - lenscenter[0]) ** 2) * para
             s = 0.9998 - 4.2932 * math.pow(10, -4) * r + 3.4327 * math.pow(10, -6) * math.pow(r, 2) - 2.8526 * math.pow(
                 10, -9) * math.pow(r, 3) + 9.8223 * math.pow(10, -13) * math.pow(r, 4)  # 比例
             mCorrectPoint = (
@@ -59,11 +59,11 @@ def main(filename="Emotion/1.jpg", para=1, para_min=2.5, offset=0, save_name="te
     img.show()
 
     if circle:
-        from cutCircle import fill_circle_with_image
-        fill_circle_with_image(save_name, save=False)
+        from forTest import fill_circle_with_image
+        fill_circle_with_image(save_name, circle_size=(84*2, 84*2), save=True)
 
 
 if __name__ == "__main__":
-    main(filename="result_concat.jpg", save_name="result_concat_res.jpg", para=2, para_min=4, offset=-20, circle=False)
+    main(filename="result_concat.jpg", save_name="result_concat_res.jpg", para=4, para_min=4, offset=0, circle=True)
     # main(filename="result_concat.jpg", save_name="result_concat_res.jpg", para=2, para_min=4, offset=-20, circle=False)
     # main(filename="result_concat.jpg", save_name="black_white_test.jpg", para=3, para_min=1, offset=0)

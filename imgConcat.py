@@ -1,5 +1,8 @@
 from PIL import Image
 
+compression_ratios = [0.85, 0.85, 0.85, 0.83,
+                      0.83, 0.85, 0.85, 0.5]  # 设置不同的y方向压缩比例，数值越小压缩程度越大
+
 
 def split_image_y(image_path):
     """
@@ -11,8 +14,6 @@ def split_image_y(image_path):
     num_slices = height // 32  # 计算y方向可分割的切片数量
     print(f"y:图片宽度：{width}，高度：{height}，切片数量：{num_slices}")
 
-    compression_ratios = [0.5, 0.65, 0.8, 0.9,
-                          0.93, 0.83, 0.78, 0.7]  # 设置不同的y方向压缩比例，数值越小压缩程度越大
     compressed_images = []
 
     for i in range(num_slices):
@@ -46,8 +47,8 @@ def split_image_x(img):
     num_slices = width // 32  # x方向按每列分割，所以切片数量就是图片宽度（每列作为一个切片）
     print(f"x:图片宽度：{width}，高度：{height}，切片数量：{num_slices}")
 
-    compression_ratios = [0.85, 0.89, 0.91, 0.92,
-                          0.92, 0.91, 0.89, 0.85]  # 设置不同的压缩比例，数值越小压缩程度越大
+    # compression_ratios = [0.8, 0.90, 0.88, 0.86,
+    #                       0.86, 0.88, 0.90, 0.8]  # 设置不同的压缩比例，数值越小压缩程度越大
     compressed_images = []
 
     for i in range(num_slices):
@@ -56,7 +57,7 @@ def split_image_x(img):
         box = (start_x, 0, end_x, height)  # 裁剪每一列对应的区域，y方向是整个高度范围
         slice_img = img.crop(box)
         slice_width, slice_height = slice_img.size
-        new_width = int(slice_width * compression_ratios[i % len(compression_ratios)])  # 根据压缩比例计算新的x方向像素数量，循环使用压缩比例列表
+        new_width = int(slice_width * compression_ratios[i])  # 根据压缩比例计算新的x方向像素数量，循环使用压缩比例列表
         compressed_img = slice_img.resize((new_width, slice_height), Image.ANTIALIAS)  # 进行尺寸调整，使用抗锯齿算法保证图像质量
         compressed_images.append(compressed_img)
 
@@ -75,6 +76,7 @@ def split_image_x(img):
 
 if __name__ == "__main__":
     image_path = "black_white.jpg"  # 替换为实际的图片路径
+    # image_path = "chessboard_960_540.jpg"
     img_y = split_image_y(image_path)
     result_img = split_image_x(img_y)
     # result_img.show()
