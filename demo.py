@@ -2,7 +2,8 @@ from PIL import Image
 import numpy as np
 import addGrid
 
-def trapezoid_transform(image_path,scale_factor=0.35):
+
+def trapezoid_transform(image_path, scale_factor=0.35):
     try:
         image = Image.open(image_path)
     except:
@@ -21,9 +22,10 @@ def trapezoid_transform(image_path,scale_factor=0.35):
 
     return Image.fromarray(new_img_array.astype('uint8'))
 
+
 if __name__ == '__main__':
     image_path = 'black_white.jpg'
-    #grid_image_path = addGrid.add_grid(image_path, grid_width=30, line_width=10, line_color=(0, 0, 0),show=False)
+    # grid_image_path = addGrid.add_grid(image_path, grid_width=30, line_width=10, line_color=(0, 0, 0),show=False)
     # new_image = trapezoid_transform(grid_image_path, scale_factor=0.30)
     # image = Image.open(image_path)
     # image.show()

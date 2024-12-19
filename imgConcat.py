@@ -1,7 +1,7 @@
 from PIL import Image
 
-compression_ratios = [0.85, 0.85, 0.85, 0.83,
-                      0.83, 0.85, 0.85, 0.5]  # 设置不同的y方向压缩比例，数值越小压缩程度越大
+compression_ratios = [0.85, 0.83, 0.85, 0.83,
+                      0.83, 0.85, 0.83, 0.85]  # 设置不同的y方向压缩比例，数值越小压缩程度越大
 
 
 def split_image_y(image_path):
@@ -82,4 +82,4 @@ if __name__ == "__main__":
     # result_img.show()
     w, h = result_img.size
     print(w, h)
-    result_img.save("result_concat.jpg")
+    result_img.save("result_concat_2.jpg")

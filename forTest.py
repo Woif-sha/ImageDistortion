@@ -36,7 +36,7 @@ def fill_circle_with_image(image_path, circle_size=(84 * 2, 84 * 2), save=False)
     print(circle_img.size)
     if save:
         rgb_im = circle_img.convert('RGB')
-        rgb_im.save(image_path + '_circle.jpg')
+        rgb_im.save(image_path[:-4] + '_circle.jpg')
 
 
 if __name__ == '__main__':
