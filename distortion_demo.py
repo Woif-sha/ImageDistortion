@@ -10,7 +10,7 @@ def main(filename="Emotion/1.jpg", para=1, para_min=2.5, offset=0, save_name="te
     drcimg = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
 
     lenscenter = (img.shape[1] // 2, img.shape[0] // 2 + offset)  # 镜头中心在图像中的位置
-    cv2.circle(img, lenscenter, 5, (0, 0, 255), -1)
+    # cv2.circle(img, lenscenter, 5, (0, 0, 255), -1)
 
     for row in range(img.shape[0]):
         for col in range(img.shape[1]):
@@ -64,6 +64,6 @@ def main(filename="Emotion/1.jpg", para=1, para_min=2.5, offset=0, save_name="te
 
 
 if __name__ == "__main__":
-    main(filename="result_concat_2.jpg", save_name="result_concat_2_res.jpg", para=4, para_min=4, offset=0, circle=True)
+    main(filename="crop.jpg", save_name="face_res.jpg", para=4, para_min=4, offset=0)
     # main(filename="result_concat.jpg", save_name="result_concat_res.jpg", para=2, para_min=4, offset=-20, circle=False)
     # main(filename="result_concat.jpg", save_name="black_white_test.jpg", para=3, para_min=1, offset=0)

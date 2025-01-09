@@ -1,16 +1,17 @@
 import os
 import tkinter as tk
 from concurrent.futures import ThreadPoolExecutor
-import time
 import numpy as np
 from PIL import Image, ImageTk
 
-# 1.获取背景颜色
-# 2.裁剪图像
-# 3.放大图像
-# 4.旋转图像
-# 5.黑色区域进行颜色填充
-# 6.图像拼接
+# 中->右  # 中->左
+# 左->右  # 右->左
+
+
+# 速度等级 1 2 3  慢>>快
+# 起始位置
+# 终止位置
+# 图片文件夹路径
 
 # 参数配置
 class FrameConfig:
@@ -31,9 +32,6 @@ class FrameConfig:
         self.step = 2  # 加载帧的步长
         self.gif_interval = 10  # 帧间隔时间（毫秒）
         self.background_color = (255, 205, 89)  # 背景颜色
-
-        self.crop_size = 300
-        self.resize_para = 1.5
 
 
 def get_newimg(img, offset_y, offset, color=(255, 205, 89)):
@@ -68,13 +66,13 @@ def load_frames(folder_path, step=2):
         # 构造文件名
         frame_filename = f"笑脸_00{frame_index:03d}.png"  # 假设图像格式为 PNG
         frame_path = os.path.join(folder_path, frame_filename)
-        # print(f"加载文件: {frame_path}")  # 打印文件路径
+        print(f"加载文件: {frame_path}")  # 打印文件路径
 
         # 如果文件存在，加载图像并预处理
         if os.path.exists(frame_path):
             frame = Image.open(frame_path)
             # 预处理：填充颜色
-            # frame = get_filled(frame)
+            frame = get_filled(frame)
             frames.append(frame)
             frame_index += step  # 跳着取数据
         else:
@@ -98,33 +96,11 @@ def preprocess_frames(frames, config):
         offset = config.offset_start + i * offset_step
         rotate_degree = config.rotate_start + i * rotate_step
 
-        # 获取图片尺寸
-        width, height = frame.size
-        # print(width, height)
-        # 计算图片的中心坐标，中心向上偏移 20 像素
-        center_x, center_y = width // 2, height // 2 - 20
-
-        # 设置截取区域的大小（默认为300x300）
-        left = center_x - config.crop_size // 2
-        top = center_y - config.crop_size // 2
-        right = center_x + config.crop_size // 2
-        bottom = center_y + config.crop_size // 2
-
-        # 裁剪图片
-        cropped_frame = frame.crop((left, top, right, bottom))
-
-        # 放大图片
-        resized_frame = cropped_frame.resize((int(config.crop_size * config.resize_para),
-                                              int(cropped_frame.size[1] * (config.crop_size * config.resize_para) /
-                                                  cropped_frame.size[0])))
-        # print(resized_frame.size)
-
         # 旋转图像
-        rotated_frame = resized_frame.rotate(round(rotate_degree))
+        rotated_frame = frame.rotate(round(rotate_degree))
 
         # 使用当前 offset_y 和 offset 处理图像
         new_img = get_newimg(rotated_frame, round(offset_y), round(offset), config.background_color)
-        # new_img.show()
         img = get_filled(new_img, config.background_color)
         return img
 
@@ -135,31 +111,13 @@ def preprocess_frames(frames, config):
     return processed_frames
 
 
-def afterprocess_frames(frames, config):
+def rotate_frames(frames, config):
     """将所有帧旋转固定角度"""
 
     def process_frame(args):
         i, frame = args
-        # 获取图片尺寸
-        width, height = frame.size
-        # print(width, height)
-        # 计算图片的中心坐标，中心向上偏移 20 像素
-        center_x, center_y = width // 2, height // 2 - 20
-
-        # 设置截取区域的大小（默认为300x300）
-        left = center_x - config.crop_size // 2
-        top = center_y - config.crop_size // 2
-        right = center_x + config.crop_size // 2
-        bottom = center_y + config.crop_size // 2
-
-        # 裁剪图片
-        cropped_frame = frame.crop((left, top, right, bottom))
-
-        # 放大图片
-        resized_frame = cropped_frame.resize((int(config.crop_size * config.resize_para),
-                                              int(cropped_frame.size[1] * (config.crop_size * config.resize_para) /
-                                                  cropped_frame.size[0])))
-        rotated_frame = resized_frame.rotate(round(config.rotate_end))  # 使用 rotate_end 作为固定角度
+        # 旋转图像
+        rotated_frame = frame.rotate(round(config.rotate_end))  # 使用 rotate_end 作为固定角度
 
         # 使用固定 offset_y 和 offset 处理图像
         new_img = get_newimg(rotated_frame, config.offset_y_end, config.offset_end, config.background_color)
@@ -173,8 +131,8 @@ def afterprocess_frames(frames, config):
     return rotated_frames
 
 
-def play_gif(frames, end_frames, gif_interval=30):
-    """播放帧数据"""
+def play_gif(frames, origin_frames, gif_interval=30):
+    """播放两组帧数据（frames 和 origin_frames）"""
     root = tk.Tk()
 
     # 获取屏幕大小
@@ -187,8 +145,6 @@ def play_gif(frames, end_frames, gif_interval=30):
     # 去掉窗口的边框
     root.overrideredirect(True)
 
-    root.wm_attributes("-topmost", True)
-
     # 创建一个 Canvas 组件
     canvas = tk.Canvas(root, width=screen_width, height=screen_height)
     canvas.pack()
@@ -200,18 +156,6 @@ def play_gif(frames, end_frames, gif_interval=30):
 
     # 绑定 ESC 键事件
     root.bind('<Escape>', on_escape)
-
-    # def update_frame(frame_index):
-    #     """更新帧数据"""
-    #     if frame_index < len(frames):
-    #         # 更新图像
-    #         image_tk = ImageTk.PhotoImage(frames[frame_index])
-    #         canvas.create_image(screen_width // 2, screen_height // 2, image=image_tk)
-    #         canvas.image = image_tk  # 保持引用，防止被垃圾回收
-    #         root.after(gif_interval, update_frame, frame_index + 1)  # 更新下一帧
-    #     else:
-    #         # 循环播放
-    #         root.after(gif_interval, update_frame, 0)
 
     # 定义一个标志变量，表示是否播放完 frames
     is_frames_finished = False
@@ -229,21 +173,21 @@ def play_gif(frames, end_frames, gif_interval=30):
                 canvas.image = image_tk  # 保持引用，防止被垃圾回收
                 root.after(gif_interval, update_frame, frame_index + 1)  # 更新下一帧
             else:
+                # root.after(gif_interval, update_frame, 0)  # 循环播放
                 # frames 播放完毕，切换到 origin_frames
                 is_frames_finished = True
                 update_frame(0)  # 从第 0 帧开始播放 origin_frames
         else:
             # 播放 origin_frames
-            if frame_index < len(frames):
+            if frame_index < len(origin_frames):
                 # 更新图像
-                image_tk = ImageTk.PhotoImage(end_frames[frame_index])
+                image_tk = ImageTk.PhotoImage(origin_frames[frame_index])
                 canvas.create_image(screen_width // 2, screen_height // 2, image=image_tk)
                 canvas.image = image_tk  # 保持引用，防止被垃圾回收
                 root.after(gif_interval, update_frame, frame_index + 1)  # 更新下一帧
             else:
                 # origin_frames 播放完毕，重新开始
                 root.after(gif_interval, update_frame, 0)  # 循环播放
-                root.after(5000, root.destroy)  # 5秒后自动关闭窗口
 
     # 开始播放 GIF
     update_frame(0)  # 从第 0 帧开始播放
@@ -252,95 +196,53 @@ def play_gif(frames, end_frames, gif_interval=30):
     root.mainloop()
 
 
-def get_user_input():
-    """获取用户输入的起始位置、结束位置和速度等级"""
-    print("请输入以下参数：")
-    start_position = input("起始位置（left/mid/right）：").strip().lower()
-    end_position = input("结束位置（left/mid/right）：").strip().lower()
-    speed_level = int(input("速度等级（1: 低速, 2: 中速, 3: 高速）：") or 2)
+if __name__ == '__main__':
+    # 初始化配置
+    left = FrameConfig()
+    left.offset_y_start = 600  # y 方向起始偏移
+    left.offset_y_end = 480  # y 方向结束偏移
 
-    return start_position, end_position, speed_level
+    # x 方向偏移
+    left.offset_start = 25  # x 方向起始偏移
+    left.offset_end = 500  # x 方向结束偏移
 
-
-def get_config(start_position, end_position):
-    """根据位置（left/mid/right）返回对应的 FrameConfig"""
-    config = FrameConfig()
-
-    if start_position == "left":
-        config.offset_y_start = 480
-        config.offset_start = 500
-        config.rotate_start = 63.5
-    elif start_position == "mid":
-        config.offset_y_start = 600
-        config.offset_start = 25
-        config.rotate_start = 90
-    elif start_position == "right":
-        config.offset_y_start = 480
-        config.offset_start = -450
-        config.rotate_start = 120.5
-
-    if end_position == "left":
-        config.offset_y_end = 480
-        config.offset_end = 500
-        config.rotate_end = 63.5
-    elif end_position == "mid":
-        config.offset_y_end = 600
-        config.offset_end = 25
-        config.rotate_end = 90
-    elif end_position == "right":
-        config.offset_y_end = 480
-        config.offset_end = -450
-        config.rotate_end = 120.5
-    return config
-
-
-def process_and_play(start_position, end_position, speed_level, folder_path='./笑脸/'):
-    """
-    处理并播放帧数据，支持指定起始位置、结束位置和速度等级。
-
-    参数:
-        start_position (str): 起始位置（left/mid/right）。
-        end_position (str): 结束位置（left/mid/right）。
-        speed_level (int): 速度等级（1、2 或 3）。
-        folder_path (str): 图片文件夹路径。
-    """
-    # 根据速度等级设置 step 和 gif_interval
-    if speed_level == 1:
-        step = 1
-        gif_interval = 15
-    elif speed_level == 2:
-        step = 2
-        gif_interval = 30
-    elif speed_level == 3:
-        step = 2
-        gif_interval = 1
-
-    # 获取起始位置和结束位置的配置
-    conf = get_config(start_position, end_position)
-
-    # 设置 step 和 gif_interval
-    conf.step = step
-    conf.gif_interval = gif_interval
+    # 旋转角度
+    left.rotate_start = 90  # 起始旋转角度
+    left.rotate_end = 66.5  # 结束旋转角度
 
     # 加载帧图像
-    frames = load_frames(folder_path, step=step)
+    frames = load_frames('笑脸/', step=left.step)
 
-    # 预处理帧数据（从起始位置到结束位置）
-    processed_frames = preprocess_frames(frames, conf)
-    afterprocess_frame = afterprocess_frames(frames, conf)
+    # 预处理帧数据
+    processed_frames = preprocess_frames(frames, left)
+
+    # 旋转帧数据
+    rotated_frames = rotate_frames(frames, left)
+
     # 播放 GIF
-    play_gif(processed_frames, afterprocess_frame, gif_interval=gif_interval)
+    play_gif(processed_frames, rotated_frames, gif_interval=left.gif_interval)
 
+    right = FrameConfig()
+    right.offset_y_start = 600  # y 方向起始偏移
+    right.offset_y_end = 500  # y 方向结束偏移
 
-if __name__ == '__main__':
-    while True:
-        try:
-            # 获取用户输入的起始位置、结束位置和速度等级
-            start_position, end_position, speed_level = get_user_input()
+    # x 方向偏移
+    right.offset_start = 25  # x 方向起始偏移
+    right.offset_end = -450  # x 方向结束偏移
 
-            # 处理并播放动画
-            process_and_play(start_position, end_position, speed_level)
+    # 旋转角度
+    right.rotate_start = 90  # 起始旋转角度
+    right.rotate_end = 113.5  # 结束旋转角度
 
-        except Exception as e:
-            print(f"发生错误：{e}")
-            continue
+    # 加载帧图像
+    frames = load_frames('笑脸/', step=right.step)
+
+    # 预处理帧数据
+    processed_frames = preprocess_frames(frames, right)
+
+    # 旋转帧数据
+    rotated_frames = rotate_frames(frames, right)
+
+    # 播放 GIF
+    play_gif(processed_frames, rotated_frames, gif_interval=right.gif_interval)
+
