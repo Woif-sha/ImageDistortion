@@ -1,4 +1,5 @@
 import os
+import threading
 import tkinter as tk
 from concurrent.futures import ThreadPoolExecutor
 import time
@@ -11,6 +12,10 @@ from PIL import Image, ImageTk
 # 4.旋转图像
 # 5.黑色区域进行颜色填充
 # 6.图像拼接
+
+# 全局变量，用于存储当前的 root 对象
+current_root = None
+
 
 # 参数配置
 class FrameConfig:
@@ -34,6 +39,7 @@ class FrameConfig:
 
         self.crop_size = 300
         self.resize_para = 1.5
+        self.stay_time = 15000
 
 
 def get_newimg(img, offset_y, offset, color=(255, 205, 89)):
@@ -173,10 +179,11 @@ def afterprocess_frames(frames, config):
     return rotated_frames
 
 
-def play_gif(frames, end_frames, gif_interval=30):
+def play_gif(frames, end_frames, mode='destroy', gif_interval=30, stay_time=1000):
     """播放帧数据"""
-    root = tk.Tk()
+    global current_root
 
+    root = tk.Toplevel()
     # 获取屏幕大小
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -187,6 +194,7 @@ def play_gif(frames, end_frames, gif_interval=30):
     # 去掉窗口的边框
     root.overrideredirect(True)
 
+    # 窗口置顶
     root.wm_attributes("-topmost", True)
 
     # 创建一个 Canvas 组件
@@ -200,18 +208,6 @@ def play_gif(frames, end_frames, gif_interval=30):
 
     # 绑定 ESC 键事件
     root.bind('<Escape>', on_escape)
-
-    # def update_frame(frame_index):
-    #     """更新帧数据"""
-    #     if frame_index < len(frames):
-    #         # 更新图像
-    #         image_tk = ImageTk.PhotoImage(frames[frame_index])
-    #         canvas.create_image(screen_width // 2, screen_height // 2, image=image_tk)
-    #         canvas.image = image_tk  # 保持引用，防止被垃圾回收
-    #         root.after(gif_interval, update_frame, frame_index + 1)  # 更新下一帧
-    #     else:
-    #         # 循环播放
-    #         root.after(gif_interval, update_frame, 0)
 
     # 定义一个标志变量，表示是否播放完 frames
     is_frames_finished = False
@@ -243,7 +239,10 @@ def play_gif(frames, end_frames, gif_interval=30):
             else:
                 # origin_frames 播放完毕，重新开始
                 root.after(gif_interval, update_frame, 0)  # 循环播放
-                root.after(5000, root.destroy)  # 5秒后自动关闭窗口
+                if mode == 'destroy':
+                    root.after(stay_time, root.destroy)  # 5秒后自动关闭窗口
+                elif mode == 'stay':
+                    pass
 
     # 开始播放 GIF
     update_frame(0)  # 从第 0 帧开始播放
@@ -294,7 +293,15 @@ def get_config(start_position, end_position):
     return config
 
 
-def process_and_play(start_position, end_position, speed_level, folder_path='./笑脸/'):
+def stop_gif():
+    """强制关闭当前播放的 GIF"""
+    global current_root
+    if current_root:
+        current_root.destroy()
+        current_root = None
+
+
+def process_and_play(start_position, end_position, speed_level, mode='destroy', folder_path='./笑脸/'):
     """
     处理并播放帧数据，支持指定起始位置、结束位置和速度等级。
 
@@ -329,7 +336,7 @@ def process_and_play(start_position, end_position, speed_level, folder_path='./�
     processed_frames = preprocess_frames(frames, conf)
     afterprocess_frame = afterprocess_frames(frames, conf)
     # 播放 GIF
-    play_gif(processed_frames, afterprocess_frame, gif_interval=gif_interval)
+    play_gif(processed_frames, afterprocess_frame, mode, gif_interval=gif_interval, stay_time=conf.stay_time)
 
 
 if __name__ == '__main__':
@@ -338,9 +345,15 @@ if __name__ == '__main__':
             # 获取用户输入的起始位置、结束位置和速度等级
             start_position, end_position, speed_level = get_user_input()
 
-            # 处理并播放动画
-            process_and_play(start_position, end_position, speed_level)
-
-        except Exception as e:
-            print(f"发生错误：{e}")
-            continue
+            # # 处理并播放动画
+            # process_thread = threading.Thread(target=process_and_play, args=(
+            #     start_position, end_position, speed_level, 'destroy'))
+            # process_thread.start()
+            # #
+            # process_thread.join()
+            process_and_play(start_position, end_position, speed_level, mode='stay', folder_path='./笑脸/')
+        # except Exception as e:
+        #     print(f"发生错误：{e}")
+        #     continue
+        except:
+            pass
